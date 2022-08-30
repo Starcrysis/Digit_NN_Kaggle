@@ -69,35 +69,36 @@ class GeneratorNet(nn.Module):
     A Neural Network that creates synthetically generated art.
     """
     def __init__(self):
+        
         super(GeneratorNet, self).__init__()
-        nc = 16
+        nc = 32
         
         self.generator = nn.Sequential(
             # Block 1:input is Z, going into a convolution
-            nn.ConvTranspose2d(100, nc * 32, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(nc * 32),
-            nn.ReLU(True),
-            # state size. (ngf*8) x 4 x 4
+            # nn.ConvTranspose2d(100, nc * 32, 5, 1, 0, bias=False),
+            # nn.BatchNorm2d(nc * 32),
+            # nn.ReLU(True),
+            # # state size. (ngf*8) x 4 x 4
             
-            nn.ConvTranspose2d(nc * 32, nc * 16, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 16),
-            nn.ReLU(True),
-            # state size. (ngf*4) x 8 x 8
+            # nn.ConvTranspose2d(nc * 32, nc * 16, 5, 2, 1, bias=False),
+            # nn.BatchNorm2d(nc * 16),
+            # nn.ReLU(True),
+            # # state size. (ngf*4) x 8 x 8
             
-            nn.ConvTranspose2d(nc * 16, nc * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 8),
-            nn.ReLU(True),
-            # state size. (ngf*2) x 16 x 16
+            # nn.ConvTranspose2d(100, nc * 8, 4, 2, 1, bias=False),
+            # nn.BatchNorm2d(nc * 8),
+            # nn.ReLU(True),
+            # # state size. (ngf*2) x 16 x 16
 
-            nn.ConvTranspose2d(nc * 8, nc*4, 4, 2, 1, bias=False),
+            nn.ConvTranspose2d(100, nc*4 , 4, 2, 0, bias=False),
             nn.BatchNorm2d(nc * 4),
             nn.ReLU(True),
             # state size. (ngf) x 32 x 32
             
-            nn.ConvTranspose2d(nc * 4, nc * 2, 4, 2, 1, bias=False),
+            nn.ConvTranspose2d(nc * 4, nc*2, 3, 2, 1, bias=False),
             nn.BatchNorm2d(nc * 2),
             nn.ReLU(True),
-            # state size. (ngf*2) x 64 x 64
+            # # state size. (ngf*2) x 64 x 64
 
             nn.ConvTranspose2d(nc * 2, nc, 4, 2, 1, bias=False),
             nn.BatchNorm2d(nc),
@@ -137,8 +138,8 @@ Loading Pictures
 def load_pictures(batch_size):
     
     transform=transforms.Compose([
-                            transforms.ToTensor()
-                            #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                            transforms.ToTensor(),
+                            transforms.Normalize((0.5), (0.5))
                         ])
 
     mnist_data = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
@@ -198,9 +199,9 @@ def show_image_grid(images: torch.Tensor, ncol: int):
 
 def generate_images(batch_size, generator):
     z = torch.randn(batch_size, 100, 1, 1)
-    
     output = generator(z)
-    return output
+    generated_images = output
+    return generated_images
     
 '''
 Main Function
@@ -219,15 +220,16 @@ def main():
     '''
     generator, discriminator, loss, opt_d, opt_g = GAN(device, learning_rate)
     images = load_pictures(batch_size)
-    
     generated_images = generate_images(batch_size, generator)
-    #show_image_grid(generated_images, ncol=8)
+    
+    print(generated_images.size())
+    show_image_grid(generated_images, ncol=8)
     
     
     print("starting Training")
     for epoch in range(epochs):
         for image, labels in tqdm(images):
-            
+            print(image.size())
             # Train discriminator 
             generated_images = generate_images(batch_size, generator)
             err_d = train_discriminator(discriminator, opt_d, device, loss, image, generated_images)
