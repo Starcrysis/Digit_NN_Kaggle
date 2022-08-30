@@ -24,37 +24,39 @@ class DiscriminatorNet(nn.Module):
     """
     def __init__(self):
         super(DiscriminatorNet,self).__init__()
-        nc = 16
+        nc = 32
         self.discriminator = nn.Sequential(
             nn.Conv2d(1, nc, kernel_size = 4, stride = 2, padding = 1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 128 x 128
+
             nn.Conv2d(nc, nc * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 2),
+            #nn.BatchNorm2d(nc * 2),
             nn.LeakyReLU(0.2, inplace=True),
+            nn.Flatten(1),
             # state size. (ndf*2) x 64 x 64
+
             
-            nn.Conv2d(nc * 2, nc * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 4),
+            nn.Linear(3136, 512),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf*4) x 32 x 32
             
-            nn.Conv2d(nc * 4, nc * 8, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 8),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*8) x 16 x 16 
+            # nn.Conv2d(nc * 4, nc * 8, 4, 2, 1, bias=False),
+            # nn.BatchNorm2d(nc * 8),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # # state size. (ndf*8) x 16 x 16 
 
-            nn.Conv2d(nc*8, nc * 16, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 16),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*16) x 8 x 8
+            # nn.Conv2d(nc*8, nc * 16, 4, 2, 1, bias=False),
+            # nn.BatchNorm2d(nc * 16),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # # state size. (ndf*16) x 8 x 8
             
-            nn.Conv2d(nc * 8, nc * 16, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(nc * 32),
-            nn.LeakyReLU(0.2, inplace=True),
-            # state size. (ndf*32) x 4 x 4
+            # nn.Conv2d(nc * 8, nc * 16, 4, 2, 1, bias=False),
+            # nn.BatchNorm2d(nc * 32),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # # state size. (ndf*32) x 4 x 4
             
-            nn.Conv2d(nc * 32, 1, 3, 1, 0, bias=False),
+            nn.Linear(512, 1),
             nn.Sigmoid(),
             nn.Flatten()
         )
@@ -162,7 +164,6 @@ def train_discriminator(discriminator, optimizer, device, loss, real_data, fake_
     fake_data = fake_data.to(device)
     fake_label = torch.full((fake_data.size(0),1), 0, device=device).float()
     output = discriminator(fake_data.float())
-    print(fake_label.size(), output.size())
     error_fake = loss(output, fake_label)
     error_fake.backward()
     
@@ -221,15 +222,12 @@ def main():
     generator, discriminator, loss, opt_d, opt_g = GAN(device, learning_rate)
     images = load_pictures(batch_size)
     generated_images = generate_images(batch_size, generator)
-    
-    print(generated_images.size())
     show_image_grid(generated_images, ncol=8)
     
     
     print("starting Training")
     for epoch in range(epochs):
-        for image, labels in tqdm(images):
-            print(image.size())
+        for i, (image, labels) in enumerate(tqdm(images)):
             # Train discriminator 
             generated_images = generate_images(batch_size, generator)
             err_d = train_discriminator(discriminator, opt_d, device, loss, image, generated_images)
